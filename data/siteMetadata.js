@@ -1,6 +1,6 @@
 const siteMetadata = {
   title: `Woo's Log`,
-  author: 'Harry',
+  author: 'Hyunwoo',
   headerTitle: `Woo's Log`,
   description: 'A blog created with Next.js and Tailwind.css',
   language: 'en-us',

@@ -1,16 +1,24 @@
 ---
-name: Tails Azimuth
+name: Na Hyunwoo
 avatar: /static/images/avatar.png
-occupation: Professor of Atmospheric Science
-company: Stanford University
-email: address@yoursite.com
-twitter: https://twitter.com/Twitter
-linkedin: https://www.linkedin.com
-github: https://github.com
+occupation: Frontend developer
+# company: Stanford University
+email: contactharry97@gmail.com
+# twitter: https://twitter.com/Twitter
+linkedin: https://www.linkedin.com/in/%ED%98%84%EC%9A%B0-%EB%82%98-940552231/
+github: https://github.com/Na-hyunwoo
 ---
 
-Tails Azimuth is a professor of atmospheric sciences at the Stanford AI Lab. His research interests includes complexity modelling of tailwinds, headwinds and crosswinds.
+저는 많은 사람에게 영감을 줄 수 있는 사람이 되고 싶습니다.
 
-He leads the clean energy group which develops 3D air pollution-climate models, writes differential equation solvers, and manufactures titanium plated air ballons. In his free time he bakes raspberry pi.
+이 블로그는 그 시작입니다.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed neque elit, tristique placerat feugiat ac, facilisis vitae arcu. Proin eget egestas augue. Praesent ut sem nec arcu pellentesque aliquet. Duis dapibus diam vel metus tempus vulputate.
+제가 많이 부족한 것을 알고 있습니다.
+
+그러나, 부족함이 드러나는 것이 부끄러워 아무것도 하지 않는다면, 저는 아무것도 될 수 없습니다.
+
+저의 글이 누군가에게 도움이 되고 영감이 될 수 있는 글이 될 수 있도록
+
+양질의 글을 올리려 노력하겠습니다.
+
+부끄럽지 않은 프론트엔드 엔지니어가 되겠습니다.
