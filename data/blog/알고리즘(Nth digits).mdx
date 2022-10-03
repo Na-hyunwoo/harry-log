@@ -1,0 +1,164 @@
+---
+title: 알고리즘(Nth digits)
+date: '2022-10-04'
+tags: ['algorithm']
+draft: false
+summary: '1부터 자연수를 이어쓰면 1234567891011121314…가 됩니다. 이렇게 이어쓴 숫자를 A라 할 때, n번째에 위치하는 숫자를 반환하는 함수 solution을 완성해주세요. '
+---
+
+# 알고리즘(Nth digits)
+
+### 문제 설명
+
+1부터 자연수를 이어쓰면 1234567891011121314…가 됩니다. 이렇게 이어쓴 숫자를 A라 할 때, n번째에 위치하는 숫자를 반환하는 함수 solution을 완성해주세요.
+
+### 제한사항
+
+- 숫자의 위치 n : 1 ≤ n ≤ 1,000,000,000, n은 자연수
+
+### 입출력 예
+
+| n   | result |
+| --- | ------ |
+| 5   | 5      |
+| 15  | 2      |
+
+### 입출력 예 설명
+
+입출력 예 #1
+
+1234567… 에서 다섯 번째에는 5가 위치합니다.
+
+입출력 예 #2
+
+12345678910111213…에서 15번째에는 2가 위치합니다.
+
+### 내가 제출했던 코드
+
+```jsx
+function solution(n) {
+  let str
+
+  let num1 = 9
+  let num2 = 1
+  let calc = 9
+
+  if (n < 10) return n
+
+  // 1 ~ 9는 9 * 1개
+  // 10 ~ 99는 90 * 2개
+  // 100 ~ 999는 900 * 3개
+
+  while (n >= num1 * 10 + (num2 + 1)) {
+    num1 *= 10
+    num2++
+    calc += num1 + num2
+  }
+
+  console.log('num1, num2, calc', num1, num2, calc)
+
+  str = Math.floor(10 ** num2 + (n - (calc + 1)) / (num2 + 1))
+
+  console.log('str: ', str)
+
+  return (n - (calc + 1)) % (num2 + 1)
+}
+```
+
+### 풀이
+
+전체적인 아이디어는 다음과 같다.
+
+1. 주어진 n의 구간을 통해 n의 자릿수의 개수와, 해당하는 구간의 몇 번째 인덱스인지 구한다.
+
+   - 일의 자릿수는 1 ~ 9 로 총 개수는 9 \* 1개이다.
+   - 십의 자릿수는 10 ~ 99로 총 개수는 90 \* 2개이다.
+   - 백의 자릿수는 100 ~ 999로 총 개수는 900 \* 3개이다.
+   - 만약 n이 15로 주어졌다면 이는 길이 2를 갖고,
+   - 만약 n이 190으로 주어졌다면 이는 길이 3을 갖는다.
+
+   이를 구하는 코드는 다음과 같다.
+
+   ```jsx
+   let digits = 9
+   let length = 1
+   let first = 1
+   let index = n
+
+   while (index > length * digits) {
+     index -= length * digits
+     length++
+     first *= 10
+     digits *= 10
+   }
+   ```
+
+   여기서 first는 각 자릿수의 시작 값이다.
+
+2. 주어진 n이 가리키고 있는 숫자를 파악한다.
+
+   이는 각 자릿수의 시작값인 first에 (n - 1)을 각 자릿수의 길이인 length로 나눈 몫을 더해주면 된다.
+
+   ```jsx
+   first + Math.floor((n - 1) / length)
+   ```
+
+   예를 들어, n = 15라고 가정하였을 때,
+
+   while 문을 돌고나온 n은 6, first는 10, length는 2이다. (n - 1)를 length인 2로 나눈 몫은 2이다. 이를 10인 first값을 더하면 12라는 숫자가 나온다.
+
+   n에 14를 넣었을 때에도 같은 12라는 숫자가 나온다는 것을 생각하면 더 이해하기 쉽다.
+
+   ```jsx
+   n의 값 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+         1 2 3 4 5 6 7 8 9 1  0  1  1  1  2
+   ```
+
+3. 가리키고 있는 숫자의 정확히 몇 번째 인덱스 값인지 파악한다.
+
+   이는 위에서 구한 n이 가리키고 있는 숫자를 string의 형태로 바꿔준 뒤에,
+
+   (n - 1)을 length로 나눈 나머지의 인덱스를 리턴하면 된다.
+
+   예를 들어, n = 15라고 가정하였을 때,
+
+   while 문을 돌고나온 n은 6이고, length는 2이다. (n - 1)을 length인 2로 나눈 나머지는 1이다. 따라서, “12”라는 string의 1번째 인덱스인 ‘2’를 리턴하면 된다.
+
+   n에 14를 넣었을 때에는 “12”의 0번째 인덱스인 ‘1’이 리턴되는 것을 생각하면 조금 더 이해가 된다. 그리고 리턴 값을 Number로 형 변환 해주는 것을 잊지 말자.
+
+   ```jsx
+   digitsString = number.toString()
+   digitsString[(index - 1) % length]
+   ```
+
+최종 답은 다음과 같다.
+
+### 해답
+
+```jsx
+function solution(n) {
+  let digits = 9
+  let length = 1
+  let first = 1
+  let index = n
+  let number
+
+  let digitsString
+
+  while (index > length * digits) {
+    index -= length * digits
+    length++
+    first *= 10
+    digits *= 10
+  }
+
+  number = first + Math.floor((index - 1) / length)
+  digitsString = number.toString()
+
+  return Number(digitsString[(index - 1) % length])
+}
+```
+
+### 레퍼런스
+
+[Nth Digit](https://www.youtube.com/watch?v=3aGHrMBfO1o)

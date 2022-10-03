@@ -1,0 +1,268 @@
+---
+title: 알고리즘(문자열 합치기)
+date: '2022-10-04'
+tags: ['algorithm']
+draft: false
+summary: '두 문자열의 앞뒤를 겹쳐서 만들 수 있는 문자열 중, 더 짧은 문자열을 구하려 합니다. 
+예를 들어 “xyZA”와 “ABCxy”가 주어졌을 때, 두 문자열을 겹치는 방법은 다음과 같습니다.'
+---
+
+# 알고리즘(문자열 합치기)
+
+### 문제 설명
+
+두 문자열의 앞뒤를 겹쳐서 만들 수 있는 문자열 중, 더 짧은 문자열을 구하려 합니다.
+
+예를 들어 “xyZA”와 “ABCxy”가 주어졌을 때, 두 문자열을 겹치는 방법은 다음과 같습니다.
+
+방법1, “xyZA” 뒤에 “ABCxy” 겹치기
+
+```jsx
+xyZA
+ABCXY
+xyZABCXY
+```
+
+방법2, “ABCxy” 뒤에 “xyZA” 겹치기
+
+```jsx
+ABCxy
+xyZA
+ABCxyZA
+```
+
+두 문자열 s1과 s2가 주어질 때, s1과 s2를 겹쳐서 만들 수 있는 문자열 중, 가장 짧은 문자열을 return 하도록 solution 함수를 완성해주세요.
+
+### 제한사항
+
+- s1과 s2의 길이는 1 이상 100 이하입니다.
+- s1과 s2는 알파벳 대문자와 소문자로만 이루어져 있습니다.
+- 문자열을 겹칠 때에는 대소문자를 구분합니다. 즉, “a”와 “A”를 겹칠 수는 없습니다.
+- 가장 짧은 문자열이 여러 개라면 그 중 사전 순으로 앞서는 문자열을 return 해주세요.
+
+### 입출력 예
+
+| s1     | s2      | result    |
+| ------ | ------- | --------- |
+| “xyZA” | “ABCxy” | “ABCxyZA” |
+| “AxA”  | “AyA”   | “AxAyA”   |
+|        |         |           |
+
+### 입출력 예 설명
+
+입출력 예 #1
+
+문제에 주어진 예시와 같습니다.
+
+입출력 예 #2
+
+두 문자열을 겹치면 “AxAyA”와 “AyAxA”를 만들 수 있습니다. 둘의 길이는 같으므로 사전 순으로 앞서는 문자열인 “AxAyA”를 return합니다.
+
+### 풀이
+
+처음 아이디어는, s1의 문자열의 끝과 s2의 문자열의 처음을 하나씩 비교해 가면서 연속되게 같은 문자열만 구하면 끝 아닌가 ? 라고 생각했다.
+
+예를 들어, s1[s1.length -1 -i]와 s2[i]를 비교하는데, i의 인덱스를 하나씩 늘려주면 되는거 아닌가 ? 라는 생각이었다.
+
+그렇게 짠 코드는 다음과 같다.
+
+**첫 시도**
+
+```jsx
+function solution(s1, s2) {
+  let tempS1 = s1
+  let tempS2 = s2
+
+  let index
+  let numberOfSameNumber = 0
+
+  let case1
+  let case2
+
+  index = s1.length > s2.length ? s2.length : s1.length
+
+  console.log('index: ', index)
+
+  // 방법 1
+  for (let i = 0; i < index; i++) {
+    if (s1[s1.length - 1 - i] === s2[i]) {
+      numberOfSameNumber++
+    } else {
+      break
+    }
+  }
+
+  case1 = s1 + s2.slice(numberOfSameNumber)
+
+  numberOfSameNumber = 0
+
+  console.log('case1: ', case1)
+
+  // 방법 2
+  for (let i = 0; i < index; i++) {
+    if (s2[s2.length - 1 - i] === s1[i]) {
+      numberOfSameNumber++
+    } else {
+      break
+    }
+  }
+
+  case2 = s2 + s1.slice(numberOfSameNumber)
+
+  console.log('case2: ', case2)
+
+  return case1.length > case2.length ? case2 : case1
+}
+```
+
+**문제**
+
+코드를 이렇게 짜고
+
+solution("xyZA", "ABCxy")에 대한 콘솔을 찍어보니
+
+![concatenating-strings-trial.png](/static/images/concatenating-strings-trial.png)
+
+case1에서 xyZABCxy가 되는 것은 맞는데,
+
+case2에서 xy와 왜 합쳐지지 않지 ?? 라고 해서 위의 로직을 다시 살펴보니 이 로직은
+
+“ABCxy” 와 “xyZA”가 “ABCxyZA”와 같은 형태로 합쳐지는 로직이였던 것이다.
+
+“ABCxy” 와 “xyZA”를 비교하면 첫 인덱스에서 ‘y’와 ‘x’가 비교되고, 그 다음은 ‘x’와 ‘y’ 가 비교되기 때문에,
+
+같은 문자열이 존재하지 않는 결과가 나오는 것이다.
+
+따라서, 다른 로직이 필요했다.
+
+**제출한 답안**
+
+곰곰이 문제를 고민하다가.
+
+위에서 생각한 로직에서 조금만 바꿔주면 되겠다는 생각을 했다.
+
+s1의 문자열 끝에서 부터와 s2의 처음부터를 비교한다는 전체적인 아이디어는 비슷했다.
+
+그런데 그 문자열을 하나씩 비교하는 것이 아니라, **index의 크기만큼 자른 문자열을 비교하면 되는 것**이였다.
+
+예를들면 이런 식이다.
+
+“xyZA”와 “ABCxy”가 있을 때,
+
+맨 처음에는 “xyZA”의 끝 문자열 ‘A’와 “ABCxy”의 처음 문자열 ‘A’를 비교한다.
+
+그 다음(여기서부터 다름)엔, “xyZA”의 “ZA”와 “AB”를 비교하는 것이다.
+
+코드는 다음과 같다.
+
+```jsx
+function solution(s1, s2) {
+  let tempS1
+  let tempS2
+
+  let numberOfSameNumber = 0
+
+  let case1
+  let case2
+
+  let index
+
+  index = s1.length > s2.length ? s2.length : s1.length
+
+  // 방법 1
+  for (let i = 1; i <= index; i++) {
+    tempS1 = s1.slice(-i)
+    tempS2 = s2.slice(0, i)
+    if (tempS1 === tempS2) {
+      numberOfSameNumber = i
+    }
+  }
+
+  case1 = s1 + s2.slice(numberOfSameNumber)
+  console.log('case1: ', case1)
+
+  // 방법 2
+  for (let i = 1; i <= index; i++) {
+    tempS1 = s2.slice(-i)
+    tempS2 = s1.slice(0, i)
+    if (tempS1 === tempS2) {
+      numberOfSameNumber = i
+    }
+  }
+
+  case2 = s2 + s1.slice(numberOfSameNumber)
+  console.log('case2: ', case2)
+
+  return case1.length > case2.length ? case2 : case1
+}
+```
+
+그런데 이렇게 답안을 제출했더니, 13개 정도의 테스트 케이스 중에서 1개가 오답이 나왔다.
+
+그래서 문제를 다시 제대로 읽어 보았더니, case1과 case2의 문자열의 길이가 같다면, 알파벳 순서가 더 빠른 값을 리턴하라는 조건이 하나가 더 있었다.
+
+그러면 두 케이스의 length가 같다면, 알파벳의 순서가 더 빠른 값을 return해야 한다는 로직이 추가되어야 한다.
+
+js는 감사하게도 비교 연산자를 통해 문자열의 순서를 파악할 수 있다.
+
+![concatenating-strings-comparison.png](/static/images/concatenating-strings-comparison.png)
+
+![concatenating-strings-result.png](/static/images/concatenating-strings-result.png)
+
+### 최종 코드
+
+```jsx
+function solution(s1, s2) {
+  let answer
+
+  let tempS1
+  let tempS2
+
+  let numberOfSameNumber = 0
+
+  let case1
+  let case2
+
+  let index
+
+  index = s1.length > s2.length ? s2.length : s1.length
+
+  // 방법 1
+  for (let i = 1; i <= index; i++) {
+    tempS1 = s1.slice(-i)
+    tempS2 = s2.slice(0, i)
+    if (tempS1 === tempS2) {
+      numberOfSameNumber = i
+    }
+  }
+
+  case1 = s1 + s2.slice(numberOfSameNumber)
+  console.log('case1: ', case1)
+
+  // 방법 2
+  for (let i = 1; i <= index; i++) {
+    tempS1 = s2.slice(-i)
+    tempS2 = s1.slice(0, i)
+    if (tempS1 === tempS2) {
+      numberOfSameNumber = i
+    }
+  }
+
+  case2 = s2 + s1.slice(numberOfSameNumber)
+  console.log('case2: ', case2)
+
+  if (case1.length > case2.length) {
+    answer = case2
+  } else if (case1.length < case2.length) {
+    answer = case1
+  } else {
+    if (case1 > case2) {
+      answer = case2
+    } else {
+      answer = case1
+    }
+  }
+
+  return answer
+}
+```
