@@ -1,0 +1,205 @@
+---
+title: CSR / SSR with Next.js
+date: '2022-10-04'
+tags: ['next-js']
+draft: false
+summary: '기존에 웹 페이지는 Server에서 받은 html을 바탕으로 Client가 화면을 그렸지만, CSR 방식은 서버에서 받는게 아니라 Client에서 알아서 화면을 그리는 방식입니다. React나 Vue같은 라이브러리/프레임워크는 SPA를 만드는 것을 지원하고 CSR 방식으로 동작합니다.'
+---
+
+# CSR / SSR with Next.js
+
+### CSR(Client-side Rendering)이란 무엇이며, 그것의 장단점
+
+**CSR이란**
+
+기존에 웹 페이지는 Server에서 받은 html을 바탕으로 Client가 화면을 그렸지만, CSR 방식은 서버에서 받는게 아니라 Client에서 알아서 화면을 그리는 방식입니다. React나 Vue같은 라이브러리/프레임워크는 SPA를 만드는 것을 지원하고 CSR 방식으로 동작합니다.
+
+CSR 방식으로 만들어진 사이트는 url에 접근을 하면 서버로부터 body 태그 안에 `<div id = “root”></div>`와 application에서 필요한 **js 파일 링크**만 들어 있는 형태의 **html 파일을 응답** 받습니다. 작동 순서는 다음과 같습니다.
+
+1. 사이트에 접속합니다.
+2. html은 비어있기 때문에 처음에는 빈 화면이 보이게 됩니다.
+3. 링크된 js 파일을 서버로부터 다운로드 받습니다. 이 js 파일에는 우리 어플리케이션에 필요한 로직들 뿐만 아니라 어플리케이션을 구동하는 프레임워크와 라이브러리의 소스코드들도 다 포함이 되어 있기 때문에 사이즈가 굉장히 커서 다운로드 받는데 시간이 소요될 수 있습니다.
+4. 추가로 필요한 데이터가 있을 경우 서버로 요청해서 JSON 데이터를 받아온 다음 js 파일과 동적으로 html을 생성해서 사용자에게 화면을 보여줍니다.
+
+개발자도구 Networks 탭에 가보면 서버에서 받은 html은 내용이 비어 있는데 개발자 도구 Elements 탭에 가보면 `<div id=”root”></div>` 태그 안에 다른 태그들이 들어가 있습니다. 이 태그들은 번들링된 js 파일을 통해 만들어집니다.
+
+리액트는 build를 할 때 프로젝트 내의 모든 리액트 코드를 하나의 자바스크립트 파일로 만들어줍니다. (babel로 transpiling, webpack으로 bundling)
+
+CSR을 사용하면 초기 페이지는 다음과 같습니다.
+
+```jsx
+<html>
+  <head>
+    <script src="client-side-framework.js"></script>
+    <script src="app.js"></script>
+  </head>
+  <body>
+    <div class="container"></div>
+  </body>
+</html>
+```
+
+app.js는 Javascript의 모든 HTML 페이지를 다음과 같이 문자열로 유지합니다.
+
+```jsx
+var pages = {
+  '/': '<html> ... </html>',
+  '/foo': '<html> ... </html>',
+  '/bar': '<html> ... </html>',
+}
+```
+
+그런 다음 페이지가 로드되면 프레임워크는 URL 표시줄을 보고 [’/’]페이지에서 문자열을 가져와서
+
+```jsx
+<div class="container"> </div>
+```
+
+에 삽입합니다. 또한 링크를 클릭하면 프레임워크가 이벤트를 가로 채고 컨테이너에 새 문자열 (예 : 페이지 [’/foo’])을 삽입하고 브라우저가 정상적으로 하는것처럼 HTTP 요청을 실행하지 못하게 합니다.
+
+**정리**
+
+1. Server는 body태그 안에 비어있는 div태그 하나만 존재하는 html을 응답합니다.
+2. Clinet에서 bundle.js를 읽고 DOM을 그립니다.
+3. 사이트 내에서 라우팅 처리한 url로 이동을 하더라도 서버로부터 새로운 html을 받지 않습니다.
+4. bundle.js에 모든 코드가 다 들어있기 때문에 Client에서 변경된 url에 맞는 코드를 bundle.js에서 찾아서 그립니다.
+
+**장점**
+
+- 웹을 앱과 비슷한 경험으로 사용할 수 있습니다.
+- url이 바뀌어도 html을 다시 내려받지 않고 Client에서 알아서 그립니다. 따라서, 초기 페이지 로드 후에는 모든 페이지로드가 엄청나게 빠릅니다.
+
+**단점**
+
+- 프로젝트의 크기가 커짐에 따라 코드가 많아지면 번들링된 하나의 자바스크립트 파일의 크기가 커집니다. 이 파일의 크기가 커질수록 초기에 파일을 로드하는 시간이 오래 걸립니다. 따라서, 초기 페이지 로드가 느려집니다. 이는 사용자가 첫 화면을 보기까지 오래 걸림을 의미합니다.
+- SEO 최적화가 힘듭니다.
+  - 대부분의 검색봇이 html을 기반으로 요소를 찾기 때문에 빈 html을 내려주는 CSR을 사용하면 SEO 최적화가 힘들어집니다.
+
+### SPA(Single Page Application)로 구성된 웹 앱에서 SSR(Server-side Rendering)이 필요한 이유
+
+위에서 말한 것처럼 대부분의 검색 봇은 html을 기반으로 요소를 찾기 때문에 빈 html을 내려주는 CSR을 사용하면 SEO 최적화가 힘들어집니다. 따라서 SSR이 필요합니다.
+
+### Next.js 프로젝트를 세팅한 뒤 yarn start 스크립트를 실행했을 때 실행되는 코드
+
+- [Next.js Github 레포지토리](https://github.com/vercel/next.js/)
+
+**next-start.ts**
+
+```jsx
+#!/usr/bin/env node
+
+import arg from 'next/dist/compiled/arg/index.js'
+import { startServer } from '../server/lib/start-server'
+import { getPort, printAndExit } from '../server/lib/utils'
+import * as Log from '../build/output/log'
+import isError from '../lib/is-error'
+import { getProjectDir } from '../lib/get-project-dir'
+import { cliCommand } from '../lib/commands'
+
+const nextStart: cliCommand = (argv) => {
+  const validArgs: arg.Spec = {
+    // Types
+    '--help': Boolean,
+    '--port': Number,
+    '--hostname': String,
+    '--keepAliveTimeout': Number,
+
+    // Aliases
+    '-h': '--help',
+    '-p': '--port',
+    '-H': '--hostname',
+  }
+  let args: arg.Result<arg.Spec>
+  try {
+    args = arg(validArgs, { argv })
+  } catch (error) {
+    if (isError(error) && error.code === 'ARG_UNKNOWN_OPTION') {
+      return printAndExit(error.message, 1)
+    }
+    throw error
+  }
+  if (args['--help']) {
+    console.log(`
+      Description
+        Starts the application in production mode.
+        The application should be compiled with \`next build\` first.
+
+      Usage
+        $ next start <dir> -p <port>
+
+      <dir> represents the directory of the Next.js application.
+      If no directory is provided, the current directory will be used.
+
+      Options
+        --port, -p      A port number on which to start the application
+        --hostname, -H  Hostname on which to start the application (default: 0.0.0.0)
+        --keepAliveTimeout  Max milliseconds to wait before closing inactive connections
+        --help, -h      Displays this message
+    `)
+    process.exit(0)
+  }
+
+  const dir = getProjectDir(args._[0])
+  const host = args['--hostname'] || '0.0.0.0'
+  const port = getPort(args)
+
+  const keepAliveTimeoutArg: number | undefined = args['--keepAliveTimeout']
+  if (
+    typeof keepAliveTimeoutArg !== 'undefined' &&
+    (Number.isNaN(keepAliveTimeoutArg) ||
+      !Number.isFinite(keepAliveTimeoutArg) ||
+      keepAliveTimeoutArg < 0)
+  ) {
+    printAndExit(
+      `Invalid --keepAliveTimeout, expected a non negative number but received "${keepAliveTimeoutArg}"`,
+      1
+    )
+  }
+
+  const keepAliveTimeout = keepAliveTimeoutArg ? Math.ceil(keepAliveTimeoutArg) : undefined
+
+  startServer({
+    dir,
+    hostname: host,
+    port,
+    keepAliveTimeout,
+  })
+    .then(async (app) => {
+      const appUrl = `http://${app.hostname}:${app.port}`
+      Log.ready(`started server on ${host}:${app.port}, url: ${appUrl}`)
+      await app.prepare()
+    })
+    .catch((err) => {
+      console.error(err)
+      process.exit(1)
+    })
+}
+
+export { nextStart }
+```
+
+next start라는 커맨드라인이 입력되었을 때 실행되는 코드입니다.
+
+next start는 애플리케이션을 프로덕션 모드로 시작하게 해줍니다. 단, next start이전에 반드시 next build가 선행이 되어야 합니다. (그렇지 않으면 실행이 되지 않습니다.)
+
+—help, —port와 같이 next start 뒤에 입력할 수 있는 옵션에 대한 설명이 적혀있습니다.
+
+리액트의 경우 yarn start를 했을 시에 현재 사용중이지 않은 port 넘버를 알아서 찾아줍니다. 반면에, next는 그러지 않아서 불편하다고 생각하고 있었는데, —port를 통해 port 넘버를 지정해줄 수 있으니 앞으로는 port 넘버를 지정해서 커맨드 라인을 실행해야겠습니다.
+
+콘솔에
+
+![csr-ssr-with-next-js-log](/static/images/csr-ssr-with-next-js-log.png)
+
+다음과 같은 로그도 이 파일에서 찍어줍니다.
+
+이렇게 next start시에 실행되는 파일을 직접 보니 이 하나의 cli에 대해서 굉장히 깊게 알게되었습니다. next라는 프레임워크에 익숙하지 않아 이 파일의 모든 요소를 이해하는 것은 어렵지만 (해설 부탁드립니다요🥹) 프레임워크를 더 깊게 이해하기 위한 하나의 방법을 배운 것 같아서 기분이 좋습니다. ☺️
+
+### 레퍼런스
+
+[[번역] Client-side rendering VS. Server-sde rendering](https://jongmin92.github.io/2017/06/06/JavaScript/client-side-rendering-vs-server-side-rendering/)
+
+[NAVER D2](https://d2.naver.com/helloworld/7804182)
+
+[[WEB] Client Side Rendering과 Server Side Rendering](https://jess2.xyz/web/csr-ssr/)
+
+[What's the difference between npm run dev and npm run start in Next.js?](https://stackoverflow.com/questions/69400243/whats-the-difference-between-npm-run-dev-and-npm-run-start-in-next-js)
