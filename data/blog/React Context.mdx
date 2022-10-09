@@ -1,0 +1,99 @@
+---
+title: React Context
+date: '2022-10-08'
+tags: ['React', 'Context']
+draft: false
+summary: 'context를 이용하면 부모 컴포넌트에서 자식 컴포넌트로 props를 일일이 넘겨주지 않아도 됩니다. context를 통해 컴포넌트 트리 전체에 데이터를 제공할 수 있습니다.'
+---
+
+# React Context
+
+### Context란
+
+context를 이용하면 부모 컴포넌트에서 자식 컴포넌트로 props를 일일이 넘겨주지 않아도 됩니다. context를 통해 **컴포넌트 트리 전체에 데이터를 제공**할 수 있습니다.
+
+React를 통해 애플리케이션을 개발할 때면 대부분 데이터를 위에서 아래로 props를 통해 전달되지만, 애플리케이션 안의 여러 컴포넌트들을 거쳐서 전해줘야 하는 props의 경우 이 과정이 번거롭습니다. context를 이용하면, 트리 단계마다 명시적으로 props를 넘겨주지 않아도 **컴포넌트가 값을 공유할 수 있습니다.**
+
+### API
+
+**React.createContext**
+
+```jsx
+const MyContext = React.createContext(defaultValue)
+```
+
+**Context 객체를 만들어 줍니다.** MyContext 객체를 구독하고 있는 컴포넌트를 렌더링할 때 React는 트리 상위에서 가장 가까이 있는 짝이 맞는 Provider로부터 현재값을 읽습니다.
+
+해당 context가 provider에 **할당되지 않은 경우 쓰이는 값**입니다. Provider를 통해 undefined을 값으로 보낸다고 해도 구독 컴포넌트들이 defaultValue를 읽지 않습니다.
+
+**Context.Provider**
+
+```jsx
+<MyContext.Provider value={/*어떤 값*/}>
+```
+
+Context 오브젝트에 포함된 React 컴포넌트인 Provider는 **context를 구독하는 컴포넌트들에게 context의 변화를 알리는 역할**을 합니다.
+
+Provider 컴포넌트는 value prop을 받아서 이 값을 하위에 있는 컴포넌트에게 전달합니다. 값을 전달받을 수 있는 컴포넌트의 수에 제한은 없습니다. **Provider 하위에 또 다른 Provider를 배치하는 것도 가능하며, 이 경우 하위 Provider의 값이 우선시 됩니다.**
+
+Provider 하위에서 **context를 구독하는 모든 컴포넌트는 Provider의 value prop이 바뀔 때마다 다시 렌더링** 됩니다.
+
+**Context.Consumer**
+
+```jsx
+<MyContext.Consumer>
+	{value => /* context 값을 이용한 렌더링 */}
+</MyContext.Consumer>
+```
+
+context 변화를 구독하는 React 컴포넌트입니다. 이 컴포넌트를 사용하면 함수 컴포넌트안에서 **context를 구독할 수 있습니다.**
+
+Context.Consumer의 자식은 함수여야합니다. 이 함수가 받는 value 매개변수 값은 해당 context의 Provider 중 상위 트리에서 **가장 가까운 Provider의 value props과 동일합니다. 상위에 Provider가 없다면** value 매개변수 값은 createContext()에 보냈던 **defaultValue와 동일합니다**
+
+### Hook
+
+**useContext**
+
+```jsx
+const value = useContext(MyContext)
+```
+
+context 객체를 받아 그 context의 현재 값을 반환합니다. context의 현재 값은 트리 안에서 이 Hook을 호출하는 컴포넌트에 **가장 가까이에 있는** **`<MyContext.Provider>`의 value props에 의해 결정**됩니다.
+
+컴포넌트에 가장 가까운 `<MyContext.Provider>`가 갱신되면 이 Hook은 그 MyContext provider에게 전달된 **가장 최신의 context value를 사용하여 렌더러를 트리거**합니다.
+
+**useContext를 호출한 컴포넌트**는 **context 값이 변경**되면 **항상 리렌더링** 됩니다. 컴포넌트를 리렌더링 하는 것에 비용이 많이 든다면, **메모이제이션**을 사용하여 최적화할 수 있습니다.
+
+### 의문이 들었던 점
+
+context 객체의 값을 사용하려 할 때, Context.Provider와 useContext 훅 중에 어떤 것을 사용하는 것이 더 나은 방법인지 의문이 들었습니다. 그래서 이와 관련한 자료를 찾았습니다.
+
+![react-context-hook](/static/images/react-context-hook.png)
+
+useContext 훅은 context와 관련한 컨셉을 바꾼 것이 아니라, **그냥 context를 더 예쁘게 사용할 수 있게 해준다는 의미입니다.** 따라서 consumer를 사용할 필요 없이 **useContext 훅을 사용하면 됩니다 !** (그래서 consumer를 보기 힘들었구나 !)
+
+### 소감
+
+전역 상태를 관리하기 위해 recoil로 엄청 간단하고 쉽게 사용했었는데, react에 자체 내장된 context에 대해 공부해보니 전역상태 관리에 대해 전체적인 이해도가 올라가는 것 같습니다.
+
+이 포스팅을 정리하면서 우리는 왜 recoil을 선택했는지에 대해 다시한번 생각해보게 되었습니다.
+
+가장 큰 이유 두 가지는
+
+1. recoil은 사용하기 쉬워 러닝 커브가 낮고 코드량이 적습니다.
+
+2. context를 사용할 때 context value가 변경되면 자식 컴포넌트들이 모두 재렌더링 되는 문제가 있는데, recoil에선 구독한 컴포넌트만 재렌더링이 일어납니다. 따라서 렌더링 최적화가 자연스럽게 이뤄진다는 것을 알 수 있습니다.
+
+react를 통해 웹 애플리케이션을 여러 번 완성하면서 react와 많이 가까워져 있다고 생각했는데, 알면 알수록 제가 부족하고 더 공부를 열심히 해야겠다는 생각이 듭니다. 개발을 처음 시작할 때에는 코드만 많이짜면 장땡 아니야? 라는 생각이었는데, 내가 코드를 잘 짜고 있고 내가 사용하고 있는 언어, 프레임워크를 잘 사용하고 있는지 알기 위해선 공부가 무조건 선행되어야 한다는 생각이 요새 강하게 들고 있습니다. 그래서 공부 의지가 더 활활 타오르게 되고 앞으로 좋은 개발자가 되기 위해 더 열심히 해야겠다는 생각이 듭니다 ☺️
+
+### 레퍼런스
+
+[Context - React](https://ko.reactjs.org/docs/context.html)
+
+[Hooks API Reference - React](https://reactjs.org/docs/hooks-reference.html#usecontext)
+
+[](https://react.vlpt.us/basic/22-context-dispatch.html)
+
+[Context.Consumer vs useContext() to access values passed by Context.Provider](https://stackoverflow.com/questions/56816374/context-consumer-vs-usecontext-to-access-values-passed-by-context-provider)
+
+[[React] Context Api에 대해서](https://leedr0730.medium.com/react-context-api%EC%97%90-%EB%8C%80%ED%95%B4%EC%84%9C-5d2f95d67b09)

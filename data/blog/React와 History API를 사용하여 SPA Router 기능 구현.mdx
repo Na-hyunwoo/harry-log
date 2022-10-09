@@ -1,0 +1,298 @@
+---
+title: React Router
+date: '2022-10-09'
+tags: ['React', 'React-Router']
+draft: false
+summary: 'react-router를 직접 구현해보고자 한다. 근데 막상 시작하려고 하니 무엇부터 시작해야 할지 전혀 감이 잡히지 않았다. 그래서 30분정도 고민하다가 인터넷에서 레퍼런스를 막 찾아보기 시작했다.'
+---
+
+# React와 History API를 사용하여 SPA Router 기능 구현하기
+
+### React와 History API를 사용하여 SPA Router 기능 구현하기
+
+**1) 해당 주소로 진입했을 때 아래 주소에 맞는 페이지가 렌더링 되어야 한다.**
+
+- `/` → `root` 페이지
+- `/about` → `about` 페이지
+
+**2) 버튼을 클릭하면 해당 페이지로, 뒤로 가기 버튼을 눌렀을 때 이전 페이지로 이동해야 한다.**
+
+- 힌트) `window.onpopstate`, `window.location.pathname` History API(`pushState`)
+
+**3) Router, Route 컴포넌트를 구현해야 하며, 형태는 아래와 같아야 한다.**
+
+```jsx
+ReactDOM.createRoot(container).render(
+  <Router>
+    <Route path="/" component={<Root />} />
+    <Route path="/about" component={<About />} />
+  </Router>
+)
+```
+
+**4) 최소한의 push 기능을 가진 useRouter Hook을 작성한다.**
+
+```jsx
+const { push } = useRouter()
+```
+
+**5) 아래 스크린샷을 참고하여 앱을 작성한다.**
+
+![react-router-root](/static/images/react-router-root.png)
+
+![react-router-about](/static/images/react-router-about.png)
+react-router를 직접 구현해보고자 한다. 근데 막상 시작하려고 하니 무엇부터 시작해야 할지 전혀 감이 잡히지 않았다. 그래서 30분정도 고민하다가 인터넷에서 레퍼런스를 막 찾아보기 시작했다.
+
+일단 기본적인 로직은 Router 내부에 컴포넌트를 두고. 각 컴포넌트 클릭 시에 화면에 있는 UI가 바뀌면 성공하는 것이다. 그러면 각 컴포넌트에서 다른 컴포넌트로 이동하는 버튼을 클릭하였을 때 path를 변경하고, 이 path를 감지해서 화면에 찍히는 UI를 다르게 보여주면 되는 것이다.
+
+이 위에있는 메인 아이디어까지 도달하는데 꽤나 오래 걸렸다. 왜냐하면 react의 context라는 녀석을 잘 모르고 있었기 때문이다. 처음 react-router를 구현하려고 react-router 깃헙에 들어가서 뒤져보니, `<Router>` 컴포넌트는 `<Context.Provider>`로 감싸져 있었다. 이 코드를 본 적이 없으니 벙찐게 당연한 게 아니었을까.. ㅎㅎ
+
+그동안 recoil을 사용해서 정말 간단하게 글로벌하게 상태를 관리했었는데 react에서 자체적으로 제공하는 context라는 녀석이 있었고, 이를 다뤄본 적이 없었다. 그래서 한번 정리해 봤다. 포스트는 아래 링크에 있다 !
+
+그러면 이제 구현을 해보도록 하겠다 ! 내가 가장 먼저 구현해야 하는 기능은
+
+1. 버튼을 클릭하면 해당 페이지로 이동하는 것이다.
+
+이 기능은 위에 적었듯이 `<Router>` 하위에 선언된 컴포넌트들이 하나의 path값을 공유하게 하면 구현할 수 있다. path의 값을 공유하게 되면 useContext훅을 사용해 path의 값을 사용하고자 하는 모든 컴포넌트는 context가 가지고 있는 value의 값이 바뀔때마다 리렌더링 된다. 그러면 우리는 리액트의 이러한 성질을 이용하면 위의 기능을 구현할 수 있다.
+
+```jsx
+ReactDOM.createRoot(container).render(
+  <Router>
+    <Routes>
+      <Route path="/" component={<Root />} />
+      <Route path="/about" component={<About />} />
+    </Routes>
+  </Router>
+)
+```
+
+가장 먼저 전체적인 구조를 이렇게 먼저 잡고 시작했다. 이제 내부의 컴포넌트들을 구현하면 된다.
+
+Router와 자식 컴포넌트들은 하나의 context를 공유해야 한다. 그래서 가장 먼저 RouterContext를 만들어주었다.
+
+```jsx
+import { createContext } from 'react'
+
+export const RouterContext = createContext({
+  path: '',
+  changePath: () => undefined,
+})
+```
+
+그리고 이제 Router 컴포넌트에서 자식 컴포넌트들이 하나의 context를 공유할 수 있도록 provider를 사용해준다.
+
+```jsx
+import { useState } from 'react'
+import { RouterContext } from '../context/RouterContext'
+
+const Router = ({ children }) => {
+  const [path, setPath] = useState(window.location.pathname)
+
+  const contextValue = {
+    path,
+    changePath: setPath,
+  }
+
+  return <RouterContext.Provider value={contextValue}>{children}</RouterContext.Provider>
+}
+
+export default Router
+```
+
+그러면 이제는 `<Router>`의 자식 컴포넌트는 이 path에 접근할 수 있고 값을 변경할 수 있다.
+
+`<Routes>` 컴포넌트는 path의 값이 변경됨에 따라 알맞은 컴포넌트를 return해주는 역할을 한다.
+
+```jsx
+import { useContext } from 'react'
+import { RouterContext } from '../context/RouterContext'
+
+const Routes = ({ children }) => {
+  const { path } = useContext(RouterContext)
+
+  let element = null
+
+  children.forEach((child) => {
+    if (child.props.path === path) {
+      element = child.props.component
+      return
+    }
+  })
+
+  return element
+}
+
+export default Routes
+```
+
+Route는 내부에 필요한 값이 없고, 단지 Routes에게 path와 component에 대한 정보만을 전달해줄 수 있으면 그 역할은 끝인 것이다. 따라서 Route는 다음과 같다.
+
+```jsx
+const Route = () => null
+
+export default Route
+```
+
+여기서 처음 안 사실은 Route를 위와같이 null로 지정해두면, 화면에 아무것도 그리지 않지만 컴포넌트는 props로 데이터를 가질 수 있다는 것이다.
+
+root와 about 컴포넌트는 다음과 같이 간단하게 만들었다.
+
+```jsx
+// About.jsx
+import { useContext } from 'react'
+import { RouterContext } from '../context/RouterContext'
+
+const About = () => {
+  const { changePath } = useContext(RouterContext)
+
+  const handleClick = (e) => {
+    changePath('/')
+  }
+
+  return (
+    <div>
+      <h2>Now In About</h2>
+      <div className="card">
+        <button onClick={handleClick}>Go To Root</button>
+      </div>
+    </div>
+  )
+}
+
+export default About
+```
+
+```jsx
+// Root.jsx
+import { useContext } from 'react'
+import { RouterContext } from '../context/RouterContext'
+
+const Root = () => {
+  const { changePath } = useContext(RouterContext)
+
+  const handleClick = (e) => {
+    changePath('/about')
+  }
+
+  return (
+    <div>
+      <h2>Now In Root</h2>
+      <div className="card">
+        <button onClick={handleClick}>Go To About</button>
+      </div>
+    </div>
+  )
+}
+
+export default Root
+```
+
+각각의 컴포넌트에서 버튼을 눌렀을 때 잘 작동한다 !
+
+<Image
+  alt="react-router-now-root"
+  src="/static/images/react-router-now-root.png"
+  width={400}
+  height={400}
+/>
+
+<Image
+  alt="react-router-now-about"
+  src="/static/images/react-router-now-about.png"
+  width={400}
+  height={400}
+/>
+
+**주소창 값 변경하기**
+
+위까지 코드를 작성하면 주소창 값이 바뀌지 않는다. 주소창 값을 어떻게 바꿔줄 수 있을까 ?
+
+주소 내역은 하나의 목록이다. 따라서 우리는 이 목록을 관리해주면 된다. 이 주소 내역을 관리할 수 있게 해주는 녀석이 바로 window.history.pushState()이다.
+
+![react-router-push-state](/static/images/react-router-push-state.png)
+
+이는 내가 접속한 url의 주소들을 stack의 형태로 관리할 수 있게 해준다. 그러면 이제 간단하다. 우리가 만든 코드에서 path가 변경될 때 마다 그 url 주소의 값을 pushState를 통해 전달해주면 되기 때문이다. 코드는 다음과 같다.
+
+```jsx
+const changePath = (path) => {
+  setPath(path)
+  window.history.pushState('', '', path)
+}
+
+const contextValue = {
+  path,
+  changePath: changePath,
+}
+```
+
+**뒤로가기 버튼**
+
+위의 pushState의 첫 번째 인자에 빈 문자열이 들어갔지만, 이는 state를 전달하는 용도이다. 따라서 이 첫 번째 인자에 어떤 값을 넣게되면 스택에 저장을 할 수 있다. 그러면 우리는 뒤로가기 버튼이 동작하도록 하기 위해선 뒤로가기 버튼을 눌렀을 때 path의 값을 변경시켜주면 리액트에서 알아서 리렌더링을 해줄 것이다.
+
+사용자가 뒤로 가기나 앞으로 가기 버튼을 누를 때마다 브라우저는 새로운 상태로 이동한다고 할 수 있다. 새로운 상태로 이동할 때 마다 발생하는 이벤트가 있는데 이것이 바로 popstate이다. 따라서, pushState를 호출해 경로를 이동할 때 마다, state에 path를 저장해 두어서, popstate 이벤트가 발생했을 때 스택에 있는 값을 꺼내서 화면에 그리면 된다.
+
+```jsx
+const Router = ({ children }) => {
+  // ...
+
+  // pushState가 발생할 때 마다 state에 path값을 저장해둔다.
+  const changePath = (path) => {
+    setPath(path)
+    window.history.pushState({ path: path }, '', path)
+  }
+
+  useEffect(() => {
+    // 저장된 state값을 가져와서 path를 수정한다.
+    const handleOnpopstate = (e) => {
+      setPath(e.state?.path || '/')
+    }
+
+    window.addEventListener('popstate', handleOnpopstate)
+
+    return () => {
+      window.removeEventListener('popstate', handleOnpopstate)
+    }
+  }, [])
+
+  // ...
+}
+
+export default Router
+```
+
+**최소한의 push 기능을 가진 useRouter Hook을 작성**
+
+push는 간단하다. useRouter라는 훅을 만들어서, 기존 useContext에서 changePath를 해주던 녀석의 역할을 하게 해주면 된다.
+
+```jsx
+// useRouter.jsx
+import { useContext, useCallback } from 'react'
+import { RouterContext } from '../context/RouterContext'
+
+export const useRouter = () => {
+  const { path, changePath } = useContext(RouterContext)
+
+  const push = useCallback(
+    (url) => {
+      changePath(url)
+    },
+    [path]
+  )
+
+  return { push }
+}
+```
+
+커스텀 훅을 만드니 로직이 훨씬 깔끔해 보이고 사용하기도 쉬웠다.
+
+### 소감
+
+React의 가장 큰 장점은 CSR 렌더링 방식을 사용해서 웹에서도 애플리케이션과 같은 경험을 사용자에게 제공한다는 것이고, 오늘은 그 경험에 가장 중요한 부분 중 하나인 Router라는 기능을 구현해 보았다. 실제로 구현을 해보려고 고민을 하고 생각을 하다보니 자연스레 react에 대한 이해도가 더 높아진 것 같다는 생각이 들었다. 그리고 react-router의 구조에 대한 이해도가 더 높아졌다는 생각이 들었다.
+
+### 레퍼런스
+
+[https://github.com/remix-run/react-router](https://github.com/remix-run/react-router)
+
+[History API - Web API | MDN](https://developer.mozilla.org/ko/docs/Web/API/History_API)
+
+[리액트 라우터 만들기](https://jeonghwan-kim.github.io/dev/2022/05/06/react-router.html)
