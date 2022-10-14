@@ -108,7 +108,7 @@ Render Tree를 더 자세하게 살펴봅시다. Render Tree는 Render Object Tr
 
 화면에 보이는 노드들만을 가지고 있는 Render Tree가 다 만들어지면, Render Tree의 노드들이 **화면의 어디에 위치할 지를 계산**하는 **Layout 과정**을 거칩니다. CSSOM의 스타일 정보로 이 컨텐츠가 어떻게 생겨야 한다는 것은 알고 있지만, 현재 보이는 뷰포트를 기준으로 **실제 이 컨텐츠가 어디에 위치해야 하는지를 또 계산**해야 합니다. 여기서 **CSS box model**이 쓰이며, position(relative, absolute, fixed..), width, height 등등 틀과 위치에 관련된 부분들이 계산됩니다.
 
-만약 **width: 50%**로 되어있는데, **브라우저를 리사이즈**한다면, 보이는 요소들은 변함이 없으니 Render Tree는 그대로인 상태에서, **layout 단계만 다시 거쳐 위치를 계산**해서 그리게 됩니다.
+만약 width: 50%로 되어있는데, **브라우저를 리사이즈**한다면, 보이는 요소들은 변함이 없으니 Render Tree는 그대로인 상태에서, **layout 단계만 다시 거쳐 위치를 계산**해서 그리게 됩니다.
 
 이렇게 화면에 보이는 요소들이 어디에 어떻게 위치할 지를 정해주는 과정을 **Webkit에서는 layout**으로, **Gecko에서는 reflow**로 부릅니다.
 
