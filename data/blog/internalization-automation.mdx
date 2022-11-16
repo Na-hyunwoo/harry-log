@@ -1,0 +1,410 @@
+---
+title: 구글 스프레드시트를 통한 국제화 자동화
+date: '2022-11-17'
+tags: ['react', 'i18next', 'i18next-scanner', 'google-spreadsheet']
+draft: false
+summary: '구글 스프레드 시트와 연결하여 국제화를 자동화하는 방법은 다음과 같다. '
+---
+
+# 국제화(i18n) 자동화하기
+
+구글 스프레드 시트와 연결하여 국제화를 자동화하는 방법은 다음과 같다.
+
+### 1. 구글 스프레드 시트 연결
+
+1. [cloud platform 이동](https://console.cloud.google.com/apis/dashboard)
+2. 사용자 인증정보 탭에서 api 생성하기
+3. 사용자 인증 정보(서비스 계정) 만들기
+4. 해당 계정 서비스 계정 수정(키)
+5. 키 추가 - 새 키 만들기
+6. JSON 형식 만들기
+7. 해당 파일 저장 (프로젝트에서 필요)
+8. 해당 계정 이메일 구글 스프레드 시트에 공유 설정
+
+### 2. translation/.credentials 폴더 생성 후 구글 스프레드시트에서 다운 받은 JSON 파일 저장
+
+- 해당 JSON파일 git ignore에 추가하기
+
+### 3. root에 i18next-scanner.config.js 파일 생성 후 설정 파일 수정
+
+i18next-scanner는 소스 코드에서 i18next.t(), i18n.t()와 같은 지정된 패턴의 함수를 스캔하여 key를 추출하고 언어별 json파일을 생성한다.
+
+```jsx
+const path = require('path')
+
+const COMMON_EXTENSIONS = '/**/*.{js,jsx,ts,tsx,vue,html}'
+
+module.exports = {
+  input: [
+    `./src/pages${COMMON_EXTENSIONS}`,
+    `./src/components${COMMON_EXTENSIONS}`,
+    `./src/container${COMMON_EXTENSIONS}`,
+    `./src/data${COMMON_EXTENSIONS}`,
+  ],
+  options: {
+    defaultLng: 'ko',
+    lngs: ['ko', 'en', 'ja'],
+    func: {
+      list: ['i18next.t', 'i18n.t', '$i18n.t'],
+      extensions: ['.js', '.jsx', '.ts', '.tsx', '.vue', '.html'],
+    },
+    resource: {
+      loadPath: path.join(__dirname, 'src/i18n/locales/{{lng}}/{{ns}}.json'),
+      savePath: path.join(__dirname, 'src/i18n/locales/{{lng}}/{{ns}}.json'),
+    },
+    defaultValue(lng, ns, key) {
+      const keyAsDefaultValue = ['ko']
+      if (keyAsDefaultValue.includes(lng)) {
+        const separator = '~~'
+        const value = key.includes(separator) ? key.split(separator)[1] : key
+
+        return value
+      }
+
+      return ''
+    },
+    keySeparator: false,
+    nsSeparator: false,
+    prefix: '%{',
+    suffix: '}',
+  },
+}
+```
+
+### 4. translation/index.js 파일 생성
+
+```jsx
+const { GoogleSpreadsheet } = require('google-spreadsheet')
+//구글 sheet json 파일
+const creds = require('./.credentials/wrtn-training-eff8faaba5ee.json')
+const i18nextConfig = require('../../i18next-scanner.config')
+
+const spreadsheetDocId = '1mZ62jG2xcDyj0UGCfaaG_GUddmh4MQc3f5CjdA9UwfA'
+const ns = 'translation'
+const lngs = i18nextConfig.options.lngs
+//구글 스프레드시트의 gid
+const sheetId = 20220825
+const loadPath = i18nextConfig.options.resource.loadPath
+const localesPath = loadPath.replace('/{{lng}}/{{ns}}.json', '')
+const rePluralPostfix = new RegExp(/_plural|_[\d]/g)
+//번역이 필요없는 부분
+const NOT_AVAILABLE_CELL = 'N/A'
+//스프레드시트에 들어갈 header 설정
+const columnKeyToHeader = {
+  key: '키',
+  ko: '한글',
+  en: '영어',
+  ja: '일본어',
+}
+
+async function loadSpreadsheet() {
+  // eslint-disable-next-line no-console
+  console.info(
+    '\u001B[32m',
+    '=====================================================================================================================\n',
+    '# i18next auto-sync using Spreadsheet\n\n',
+    '  * Download translation resources from Spreadsheet and make /src/locales//.json\n',
+    '  * Upload translation resources to Spreadsheet.\n\n',
+    `The Spreadsheet for translation is here (\u001B[34mhttps://docs.google.com/spreadsheets/d/${spreadsheetDocId}/#gid=${sheetId}\u001B[0m)\n`,
+    '=====================================================================================================================',
+    '\u001B[0m'
+  )
+
+  // spreadsheet key is the long id in the sheets URL
+  const doc = new GoogleSpreadsheet(spreadsheetDocId)
+
+  // load directly from json file if not in secure environment
+  await doc.useServiceAccountAuth(creds)
+
+  await doc.loadInfo() // loads document properties and worksheets
+
+  return doc
+}
+
+function getPureKey(key = '') {
+  return key.replace(rePluralPostfix, '')
+}
+
+module.exports = {
+  localesPath,
+  loadSpreadsheet,
+  getPureKey,
+  ns,
+  lngs,
+  sheetId,
+  columnKeyToHeader,
+  NOT_AVAILABLE_CELL,
+}
+```
+
+### 4. translation/upload.js 파일 생성
+
+```jsx
+// upload.js
+const fs = require('fs')
+
+const {
+  loadSpreadsheet,
+  localesPath,
+  getPureKey,
+  ns,
+  lngs,
+  sheetId,
+  columnKeyToHeader,
+  NOT_AVAILABLE_CELL,
+} = require('./index')
+
+const headerValues = columnKeyToHeader
+
+async function addNewSheet(doc, title, sheetId) {
+  const sheet = await doc.addSheet({
+    sheetId,
+    title,
+    headerValues,
+  })
+
+  return sheet
+}
+
+async function updateTranslationsFromKeyMapToSheet(doc, keyMap) {
+  //시트 타이틀
+  const title = 'wrtn-io-landing'
+  let sheet = doc.sheetsById[sheetId]
+  if (!sheet) {
+    sheet = await addNewSheet(doc, title, sheetId)
+  }
+
+  const rows = await sheet.getRows()
+
+  // find exsit keys
+  const exsitKeys = {}
+  const addedRows = []
+
+  rows.forEach((row) => {
+    const key = row[columnKeyToHeader.key]
+    if (keyMap[key]) {
+      exsitKeys[key] = true
+    }
+  })
+
+  //스프레트시트에 row 넣는 부분
+  for (const [key, translations] of Object.entries(keyMap)) {
+    if (!exsitKeys[key]) {
+      const row = {
+        [columnKeyToHeader.key]: key,
+        ...Object.keys(translations).reduce((result, lng) => {
+          const header = columnKeyToHeader[lng]
+          result[header] = translations[lng]
+
+          return result
+        }, {}),
+      }
+
+      addedRows.push(row)
+    }
+  }
+
+  // upload new keys
+  await sheet.addRows(addedRows)
+}
+
+// key값에 따른 언어 value
+function toJson(keyMap) {
+  const json = {}
+
+  Object.entries(keyMap).forEach(([__, keysByPlural]) => {
+    for (const [keyWithPostfix, translations] of Object.entries(keysByPlural)) {
+      json[keyWithPostfix] = {
+        ...translations,
+      }
+    }
+  })
+
+  return json
+}
+
+// 언어 key : value 값 저장
+function gatherKeyMap(keyMap, lng, json) {
+  for (const [keyWithPostfix, translated] of Object.entries(json)) {
+    const key = getPureKey(keyWithPostfix)
+
+    if (!keyMap[key]) {
+      keyMap[key] = {}
+    }
+
+    const keyMapWithLng = keyMap[key]
+    if (!keyMapWithLng[keyWithPostfix]) {
+      keyMapWithLng[keyWithPostfix] = lngs.reduce((initObj, lng) => {
+        initObj[lng] = NOT_AVAILABLE_CELL
+
+        return initObj
+      }, {})
+    }
+
+    keyMapWithLng[keyWithPostfix][lng] = translated
+  }
+}
+
+async function updateSheetFromJson() {
+  const doc = await loadSpreadsheet()
+
+  fs.readdir(localesPath, (error, lngs) => {
+    if (error) {
+      throw error
+    }
+
+    const keyMap = {}
+
+    lngs.forEach((lng) => {
+      const localeJsonFilePath = `${localesPath}/${lng}/${ns}.json`
+
+      //.json file read
+      // eslint-disable-next-line no-sync
+      const json = fs.readFileSync(localeJsonFilePath, 'utf8')
+
+      gatherKeyMap(keyMap, lng, JSON.parse(json))
+    })
+    //스프레드 시트에 업데이트
+    updateTranslationsFromKeyMapToSheet(doc, toJson(keyMap))
+  })
+}
+
+updateSheetFromJson()
+```
+
+### 5. translation/download.js 파일 생성
+
+```jsx
+// download.js
+const fs = require('fs')
+const mkdirp = require('mkdirp')
+const {
+  loadSpreadsheet,
+  localesPath,
+  ns,
+  lngs,
+  sheetId,
+  columnKeyToHeader,
+  NOT_AVAILABLE_CELL,
+} = require('./index')
+
+// 스프레드시트 -> json
+async function fetchTranslationsFromSheetToJson(doc) {
+  const sheet = doc.sheetsById[sheetId]
+  if (!sheet) {
+    return {}
+  }
+
+  const lngsMap = {}
+  const rows = await sheet.getRows()
+
+  rows.forEach((row) => {
+    const key = row[columnKeyToHeader.key]
+    lngs.forEach((lng) => {
+      const translation = row[columnKeyToHeader[lng]]
+      // NOT_AVAILABLE_CELL("_N/A") means no related language
+      if (translation === NOT_AVAILABLE_CELL) {
+        return
+      }
+
+      if (!lngsMap[lng]) {
+        lngsMap[lng] = {}
+      }
+
+      lngsMap[lng][key] = translation || '' // prevent to remove undefined value like ({"key": undefined})
+    })
+  })
+
+  return lngsMap
+}
+
+//디렉토리 설정
+function checkAndMakeLocaleDir(dirPath, subDirs) {
+  return new Promise((resolve) => {
+    subDirs.forEach((subDir, index) => {
+      mkdirp(`${dirPath}/${subDir}`, (err) => {
+        if (err) {
+          throw err
+        }
+
+        if (index === subDirs.length - 1) {
+          resolve()
+        }
+      })
+    })
+  })
+}
+
+//json 파일 업데이트
+async function updateJsonFromSheet() {
+  await checkAndMakeLocaleDir(localesPath, lngs)
+
+  const doc = await loadSpreadsheet()
+  const lngsMap = await fetchTranslationsFromSheetToJson(doc)
+
+  fs.readdir(localesPath, (error, lngs) => {
+    if (error) {
+      throw error
+    }
+
+    lngs.forEach((lng) => {
+      const localeJsonFilePath = `${localesPath}/${lng}/${ns}.json`
+
+      const jsonString = JSON.stringify(lngsMap[lng], null, 2)
+
+      fs.writeFile(localeJsonFilePath, jsonString, 'utf8', (err) => {
+        if (err) {
+          throw err
+        }
+      })
+    })
+  })
+}
+
+updateJsonFromSheet()
+```
+
+### 6. package.json에 스크립트 추가
+
+```json
+{
+  "scan:i18n": "i18next-scanner --config i18next-scanner.config.js",
+  "upload:i18n": "npm run scan:i18n && node src/translation/upload.js",
+  "download:i18n": "node src/translation/download.js",
+  "serve": "npm run download:i18n && vue-cli-service serve"
+}
+```
+
+- scan:i18n은 소스코드에서 key를 추출하여 key, value로 구성된 언어별 json 파일을 만들어 낸다.
+- upload:i18n은 생성된 여러 개의 언어별 json파일을 하나의 테이블로 만들어 구글 스프레드 시트에 업로드한다.
+- download:i18n은 반대로 동작하여 번역된 값을 각 언어별 json파일에 반영한다. 로컬에서 개발할 때나 프로덕션 빌드하기 전에 수행하여 번역 파일이 빌드에 포함될 수 있도록 npm 스크립트에 추가한다.
+
+이렇게 설정이 완료되면, npm run upload:i18n을 실행하여 소스 코드상에 있는 모든 key가 다음과 같이 업로드된다.
+
+![googlesheet-empty](/static/images/internalization-automation-sheet-empty.png)
+
+그 뒤에 번역가에게 스프레드 시트의 번역을 요청한다.
+
+![googlesheet-empty](/static/images/internalization-automation-sheet-full.png)
+
+그러면, npm run download:i18n을 실행하여 스프레드 시트로부터 최신 번역값이 빌드에 반영된다.
+
+만약 이 구글 스프레드 시트가 자주 변동이 된다면 script에 다음의 내용을 추가하여 로컬 서버 구동이나, 프로덕션 빌드 등이 될때마다 구글 스프레드 시트로부터 번역된 값을 받아올 것이다. (랜딩 페이지의 경우 자주 업데이트 되지 않기 때문에 적용하지 않았다.)
+
+```
+{
+	"build": "npm run download:i18n && webpack"
+}
+```
+
+자동화가 완성되었다 ☺️
+
+이제 다음부터 번역값이 바뀌거나, 랜딩페이지에 있는 한글 텍스트가 바뀐다면
+
+upload → 번역 요청 → download 이 세 가지 과정만 거치면 된다.
+
+자동화를 한다는 것은 굉장히 번거롭고 어렵다. 그러나, 그만큼 하고나서 뿌듯함이 제일 큰 작업이라고 생각한다.
+
+맨 처음 세팅할때 조금 고생하면 나중에는 너무나도 간편하기 때문이다.
+
+이런 자동화 하는 것에 관심이 계속 생긴다. 앞으로는 개발을 하면서 자동화가 필요한 것에는 무엇이 있을지 그리고 **어떻게 하면 자동화를 할 수 있을지에 대해서도 고민을 해봐야겠다 !**

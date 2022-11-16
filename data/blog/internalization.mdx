@@ -1,0 +1,205 @@
+---
+title: react-i18next을 사용하여 국제화하기
+date: '2022-11-17'
+tags: ['react', 'i18next', 'i18']
+draft: false
+summary: 'i18n이란 internationalization을 i18n으로 나타낸 것이며, 웹사이트를 구축할 때 다국어 처리에 자주 쓰이는 라이브러리이다.'
+---
+
+# react-i18next을 사용하여 국제화하기
+
+i18n이란 internationalization을 i18n으로 나타낸 것이며, 웹사이트를 구축할 때 다국어 처리에 자주 쓰이는 라이브러리이다.
+
+[Getting started](https://react.i18next.com/getting-started)
+
+이 document에 간단하게 패키지 설치부터 적용하는 방법에 대해 나와있다.
+
+패키지 설치는 다음의 방법으로 할 수 있다.
+
+> npm install react-i18next i18next —save
+
+다음으로는, i18n 폴더를 생성한다. 나의 경우엔 src 폴더 밑에 i18n 폴더를 두었다.
+
+<Image
+  alt="internalization-folder"
+  src="/static/images/internalization-folder.png"
+  width={500}
+  height={500}
+/>
+
+**i18next.js**
+
+```jsx
+// place in plugins/i18n.js
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+
+import ko from './locales/ko/translation.json'
+import en from './locales/en/translation.json'
+
+const lngs = ['ko', 'en']
+/**
+ * Must add new language here
+ * @param lng {Language} language
+ * @returns {Object} json resource
+ */
+function loadResource(lng) {
+  let module
+
+  switch (lng) {
+    case 'ko': {
+      module = ko
+      break
+    }
+    case 'en': {
+      module = en
+      break
+    }
+    default:
+      break
+  }
+
+  return module
+}
+
+function getResources(lngs) {
+  const resources = {}
+
+  lngs.forEach((lng) => {
+    resources[lng] = {
+      translation: loadResource(lng),
+    }
+  })
+
+  return resources
+}
+
+export function initializeI18next(lng = 'ko') {
+  // console.log("load");
+
+  i18n.use(initReactI18next).init({
+    lng,
+    fallbackLng: false,
+    returnEmptyString: false,
+    keySeparator: false,
+    nsSeparator: false,
+    interpolation: {
+      prefix: '%{',
+      suffix: '}',
+    },
+    parseMissingKeyHandler(key) {
+      /* eslint-disable-next-line no-console */
+      console.warn('parseMissingKeyHandler', `'key': '${key}'`)
+      const keySeparator = '~~'
+      const value = key.includes(keySeparator) ? key.split(keySeparator)[1] : key
+
+      return value
+    },
+    resources: getResources(lngs),
+  })
+}
+
+export function changeLanguage(lng) {
+  window.localStorage.setItem('language', lng)
+  return i18n.changeLanguage(lng)
+}
+```
+
+**locales > en > index.js**
+
+```jsx
+import translations from './translation.json'
+
+export const en = translations
+```
+
+**locales > en > translation.json**
+
+```json
+{
+  "title": "Redesign human thinking, Rebuild human writing; Wrtn",
+  "description": "From Papyrus to paper, printing press to the word processor, writing has developed with technology and media. Wrtn helps people go beyond their limits of creativity and productivity through powerful AI-Assisted Writing."
+  // ...(생략)
+}
+```
+
+locales > kr > index.js
+
+```jsx
+import translations from './translation.json'
+
+export const kr = translations
+```
+
+locales > kr > translation.json
+
+```json
+{
+  "title": "사고의 확장, 새로운 글쓰기; 뤼튼",
+  "description": "파피루스에서 종이로, 금속활자에서 워드프로세서에 이르기까지 인류의 글쓰기는 기술과 매체와 함께 발전했습니다. 뤼튼은 강력한 AI-Assisted Writing을 통해 사람들의 창의성과 생산성의 한계를 넘도록 돕습니다."
+  // ...(생략)
+}
+```
+
+여기서 **주의할 점**은 kr과 en의 key 값을 일치시켜야 한다는 점이다 !
+
+**IntroduceContainer.js (적용할 컴포넌트)**
+
+```jsx
+import { useTranslation } from 'react-i18next'
+
+const IntroduceContainer = () => {
+  const { i18n } = useTranslation();
+
+	return(
+		... (생략)
+		// t의 인자로 key 값을 넣어준다 !
+		<Title>{i18n.t("title")}</Title>
+		<Description>{i18n.t("description")}</Description>
+	);
+};
+
+```
+
+여기서 주의해야할 점은 react-i18next에 있는 **useTranslation 훅을 사용**해주는 것이다. useTranslation 훅을 사용하지 않을 경우에 리렌더링이 발생하지 않는 문제가 생길 수 있다.
+
+이와같은 설정을 다 하였을 때에도 적용이 되지 않았는데 그 이유는 **초기화 하는것을 잊었기 때문이다.** 따라서 main의 index.js 파일에 다음과 같은 코드를 추가해주었다.
+
+```jsx
+import { initializeI18next } from './i18n/i18next'
+
+initializeI18next(window.localStorage.getItem('language') || 'ko')
+```
+
+여기서 initializeI18next의 인자값으로 localStorage의 아이템 값이 들어갔는데, 이는 사용자가 language를 바꿀 때마다 그 값을 localStorage에 저장을 해주어서, 페이지를 나갔다 들어오더라도 저장된 language에 해당하는 값을 보여주기 위함이다.
+
+||라는 논리연산자는 자바스크립트의 단축평가라는 개념이다.
+
+첫 번째 값이 truthy하다면 첫 번째 값을 return하고, 첫 번째 값이 false면서 두 번째 값이 truthy하다면 두 번째 값을 리턴해준다.
+
+여기까지 완료가 된다면, 다음과 같은 버튼을 통해서
+
+<Image
+  alt="internalization-language"
+  src="/static/images/internalization-language.png"
+  width={200}
+  height={100}
+/>
+
+다음과 같은 결과물을 얻을 수 있다. 참 근사하지 않은가 ?
+
+<Image
+  alt="internalization-kor"
+  src="/static/images/internalization-kor.png"
+  width={500}
+  height={300}
+/>
+
+<Image
+  alt="internalization-eng"
+  src="/static/images/internalization-eng.png"
+  width={500}
+  height={300}
+/>
+
+이 i18n 작업은 이렇게 드라마틱한 변화를 이끌어낸다. 변화가 명확함에 따라서 재미있기도 했고, 내가 했던 작업중에 제일 재밌는 프로젝트중 하나였다.
