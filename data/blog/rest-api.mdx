@@ -33,10 +33,9 @@ REST는 REpresentational State Transfer의 약자입니다.
 예시를 들어보겠습니다.
 
 ```jsx
-/courses/front - 프론트엔드 과정에 대한 정보
-/courses/back - 백엔드 과정에 대한 정보
-
-/courses/front/crews/harry - 해리에 대한 정보
+/tools - 툴에 대한 정보
+/tools/favorite - 좋아하는 툴에 대한 정보
+/tools/recommend - 추천하는 툴에 대한 정보
 ```
 
 이 URI만 보더라도 주고받을 정보에 대해 어느정도 예측할 수 있습니다.
@@ -50,43 +49,44 @@ REST는 REpresentational State Transfer의 약자입니다.
 **URI에는 동사를 사용하지 않습니다.**
 
 ```jsx
-/courses/back/coaches/append
-/courses/front/crews/remove
+/tools/favorite/delete
+/tools/favorite/create
 ```
 
 대신에, 자원에 대한 행위를 표현하기 위해서는 HTTP Method(GET, PUT, POST, DELETE 등)를 사용합니다.
 
-예시를 들어보겠습니다.
+아래의 예시들은 제가 실제로 프로젝트 때 사용한 예시들입니다.
 
 **조회**
 
 ```jsx
 Read(조회) - GET
-GET / courses
-GET / courses / front
+GET /tools
+GET /tools/:id
+GET /tools/favorite
+GET /tools/recommend
 ```
 
 **생성**
 
 ```jsx
 Create(생성) - POST
-POST /courses/back/coaches
-body { nickname: harry }
+POST /tools/:id/favorite
 ```
 
 **수정**
 
 ```jsx
 Update(수정) - PUT
-PUT /courses/front/coaches
-body { id: 1, nickname: makerjun }
+PUT /user
+body { id: 1, name: hyunwoo }
 ```
 
 **삭제**
 
 ```jsx
 Delete(삭제) - DELETE
-DELETE / courses / front / crews / bren
+DELETE /tools/:id/favorite
 ```
 
 위에서 일반적인 REST API가 가진 구조와 특징에 대해서 알아보았습니다. 그러나, 이것은 REST 아키텍처 스타일을 잘 준수한 API가 맞지만 말 그대로 스타일이기 때문에 반드시 이것들을 지켜야만 하는것은 아닙니다. **따라서 각자 상황에 맞게 REST 스타일을 가진 API를 짜는 것이 중요합니다.**
