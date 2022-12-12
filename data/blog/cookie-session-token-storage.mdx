@@ -14,19 +14,19 @@ HTTP는 **stateless**라는 특징을 갖습니다. 이로 인해 서버는 요�
 
 ## Cookie
 
-Cookie는 사용자가 어떤 웹사이트에 방문할 경우 사용자의 브라우저에 **저장되는 작은 데이터입니다.**
+Cookie는 사용자가 어떤 웹사이트에 방문할 경우 서버에 의해 사용자의 브라우저에 **저장되는 작은 데이터입니다.**
 
 그러면 브라우저에 저장되는 작은 데이터가 어떻게 번거로웠던 인가 절차를 축소시킬 수 있었을까요 ?
 
-![cookie-process](https://velog.velcdn.com/images/dusdjeks/post/3e2caab4-ba55-41f5-95aa-693424b9bd79/image.png)
+![cookie-process](https://velog.velcdn.com/images/dusdjeks/post/a4d225dd-5660-4c50-a322-c14d70eb4c25/image.png)
 
-쿠키는 주로 웹 서버에 의해 만들어집니다. 서버가 HTTP 응답 헤더의 Set-Cookie에 내용을 넣어 전달하면, 브라우저는 이 내용을 자체적으로 브라우저에 저장합니다. 이게 바로 쿠키입니다. **브라우저는 사용자가 쿠키를 생성하도록 한 동일 사이트에 접속할 때마다 쿠키의 내용을 Cookie 요청 헤더에 넣어서 함께 전달합니다.**
+서버가 HTTP 응답 헤더의 Set-Cookie에 내용을 넣어 전달하면, 브라우저는 이 내용을 자체적으로 브라우저에 저장합니다. **브라우저는 사용자가 쿠키를 생성하도록 한 동일 사이트에 접속할 때마다 쿠키의 내용을 Cookie 요청 헤더에 넣어서 함께 전달합니다.** 따라서, 인증된 클라이언트임을 알 수 있는 것이지요 !
 
-쿠키는 이렇게 기존에 번거로웠던 인가 과정을 없앨 수 있었습니다. 그러나, Cookie에는 치명적인 단점들이 존재했습니다. **바로 클라이언트에서 값을 수정할 수 있다는 것**입니다. 그리고 만약 cookie가 ID / PW와 같은 민감한 정보들을 가지고 있다면, **노출되기 쉬워 보안에 매우 취약**합니다. 이러한 배경 속에서 session이 등장하게 되었습니다.
+쿠키는 이렇게 기존에 번거로웠던 인가 과정을 없앨 수 있었습니다. 그러나, Cookie에는 치명적인 단점들이 존재했습니다. **바로 클라이언트에서 값을 수정할 수 있다는 것**입니다. 그리고 만약 cookie가 ID/PW와 같은 민감한 정보들을 가지고 있다면, **노출되기 쉬워 보안에 매우 취약**합니다. 이러한 배경 속에서 session이 등장하게 되었습니다.
 
 ## Cookie + Session
 
-이 방식은 Cookie에 ID, PW와 같은 중요 정보들을 담는 것이 아니라, **인증을 위한 별개의 정보를 서버의 세션 저장소에 저장하는 방식**입니다. 클라이언트는 이 정보를 쿠키에 유니크한 키 형태로 담아서 서버에 요청합니다. 이 때, 서버는 세션 저장소에 있는 정보와 요청한 정보가 일치하는지 확인합니다.
+이 방식은 Cookie에 ID/PW와 같은 중요 정보들을 담는 것이 아니라, **인증을 위한 별개의 정보를 서버의 세션 저장소에 저장하는 방식**입니다. 클라이언트는 이 정보를 Cookie에 유니크한 키 형태로 담아서 서버에 요청합니다. 이 때, 서버는 세션 저장소에 있는 정보와 요청한 정보가 일치하는지 확인합니다.
 
 Cookie + Session의 동작 방식은 다음과 같습니다.
 
@@ -56,12 +56,11 @@ JWT는 다른 인증방식과 비교했을 때 스스로 정보를 담고 있고
 
 ### 인증 과정
 
-![jwt-process](https://velog.velcdn.com/images/dusdjeks/post/61adabf6-132b-4042-b0ae-128e4990960d/image.png)
+![jwt-process](https://velog.velcdn.com/images/dusdjeks/post/79dc1bfe-b54f-4532-a205-c3fc43ddf792/image.png)
 
 ### JWT 구조
 
-![jwt-architecture-1](https://velog.velcdn.com/images/dusdjeks/post/e5dd6a62-7dc4-4673-ac01-a81dc0e2eec9/image.png)
-![jwt-architecture-2](https://velog.velcdn.com/images/dusdjeks/post/11e95785-db28-4aa0-b0cf-d902a83f0082/image.png)
+![jwt-architecture](https://velog.velcdn.com/images/dusdjeks/post/aa5fca4c-991c-441b-916b-5532295ea9dd/image.png)
 
 - Header
   - typ - 토큰의 타입
@@ -106,3 +105,5 @@ storage는 cookie의 단점들을 상쇄해서 나온 것처럼 보인다. 사�
 [쿠키와 document.cookie](https://ko.javascript.info/cookie#ref-177)
 
 [JWT란? JWT , Session, Cookie 비교](https://velog.io/@znftm97/JWT-Session-Cookie-%EB%B9%84%EA%B5%90-sphsi9yh)
+
+[[WEB] 📚 JWT 토큰 인증 이란? - 💯 이해하기 쉽게 정리](https://inpa.tistory.com/entry/WEB-%F0%9F%93%9A-JWTjson-web-token-%EB%9E%80-%F0%9F%92%AF-%EC%A0%95%EB%A6%AC#Token_%EC%9D%B8%EC%A6%9D)
