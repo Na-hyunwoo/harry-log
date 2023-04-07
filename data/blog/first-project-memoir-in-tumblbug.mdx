@@ -16,7 +16,7 @@ summary: '회고록은 처음이라… gpt에게 물어보았습니다. “회�
 - [어려웠던 점 + 해결 방안](#어려웠던-점--해결-방안)
 - [결과](#결과)
 - [개선점 + 대안](#개선점--대안)
-- [결론 (느낀 감정, 느낀 점)](#결론-느낌-감정-느낀-점)
+- [결론](#결론)
 
 ### 프로젝트 개요
 
@@ -59,7 +59,12 @@ export default function OrderStatus({ isNeedApproval }: Props) {
 텀블벅 광고는 아래 그림과 같은 6개의 광고 상품이 존재합니다.
 광고 플랫폼에서는 아래의 6가지의 광고 상품에 따라, 광고의 설정이 6가지로 나눠집니다.
 
-![스크린샷 2023-03-21 오후 6.33.23.png](/static/images/first-project-memoir-in-tumblbug/ads-product.png)
+<Image
+  alt="스크린샷 2023-03-21 오후 6.33.23.png"
+  src="/static/images/first-project-memoir-in-tumblbug/ads-product.png"
+  width={500}
+  height={500}
+/>
 
 광고 설정은 아래와 같이 기본적으로 **캠페인명, 노출 기간, 노출 구좌**를 가지고 있습니다.
 
@@ -160,7 +165,12 @@ const exposureAds = adsProduct['HOME_BANNER_PACKAGE']
 
 광고 플랫폼에서는 아래 영상에서와 같이 일반적인 캘린더와는 다르게 동작하고 있습니다.
 
-![ezgif.com-optimize (1).gif](/static/images/first-project-memoir-in-tumblbug/calendar.gif)
+<Image
+  alt="ezgif.com-optimize (1).gif"
+  src="/static/images/first-project-memoir-in-tumblbug/calendar.gif"
+  width={500}
+  height={600}
+/>
 
 따라서, 광고 플랫폼의 자체적인 캘린더를 만들어야 했습니다. 앞에서 말했듯이, 프로젝트를 중간에 이어받아서 하게 되었고, 캘린더는 UI가 완성되어있는 상태였습니다.
 
@@ -368,6 +378,22 @@ const handleEnableDateSelect = (selectedDate: string) => {
 ┃ ┣ 📂types  
 ┃ ┣ 📂utils
 
+- 총 15000줄이다...
+
+<Image
+  alt="총 커밋 수1"
+  src="/static/images/first-project-memoir-in-tumblbug/commit-amount-1.png"
+  width={500}
+  height={300}
+/>
+
+<Image
+  alt="총 커밋 수2"
+  src="/static/images/first-project-memoir-in-tumblbug/commit-amount-2.png"
+  width={500}
+  height={300}
+/>
+
 - [결과물 링크](https://ads.tumblbug.com/)
 
 ### 개선점 + 대안
@@ -385,9 +411,14 @@ const handleEnableDateSelect = (selectedDate: string) => {
   - 긴장인 상태가 지속됐을 때, 쉽게 지치게 되고 피로도가 쉽게 쌓이게 됩니다. 그래서 요새는 팀원들한테 사소한 얘기라도 말을 걸려고 노력하고, 속보다는 밖으로 얘기를 많이 꺼내려고 노력합니다. 원래는 쓸데없는 말을 하기 싫어하는 타입인데, 요새는 쓸데없는 말은 없다는 생각으로 이것저것 얘기를 많이 꺼내려고 노력합니다.
   - 그러다보니, 자연스레 업무에 대한 내용이 공유되고 생각 자체가 투명하게 공유되서 의견을 나누기가 훨씬 수월해진 것 같습니다. 여러모로 일하기 좋은 개발자가 되기 위해 부단히 노력하고 있는 중입니다.
 
-### 결론 (느낀 감정, 느낀 점)
+### 결론
 
-- 결과적으로 2월 초부터 개발에 착수하여 3월 15일까지 개발을 완료할 수 있었습니다. 운전을 하다가 긴 터널에 들어가면 끝에있는 출구의 빛이 안보이듯이, 프로젝트를 처음 시작할 때는 빨리 빛이 보이길 바라는 마음으로 했던 것 같습니다.
+- 결과적으로 2월 초부터 개발에 착수하여 3월 15일까지 개발을 완료할 수 있었습니다. 회고할 때, 어떤 데이터 개발자 분이 말씀하시길 "솔직히 프론트 개발자분들이 전부 오프보딩하는걸 보면서, 프로젝트가 무산될 줄 알았어요.."라고 말씀하시는 것을 보면서, 큰 뿌듯함을 느꼈습니다.
+- CTO님께서 감동했다는 표현을 쓰셨습니다. 저도 덩달아 감동했습니다 ㅠ.ㅠ
+
+  ![moved](/static/images/first-project-memoir-in-tumblbug/moved.png)
+
+- 운전을 하다가 긴 터널에 들어가면 끝에있는 출구의 빛이 안보이듯이, 프로젝트를 처음 시작할 때는 빨리 빛이 보이길 바라는 마음으로 했던 것 같습니다.
 - 광고 플랫폼을 완성하고 기쁜 마음에 사내 슬랙을 통해 시연 영상을 공유하였고, 엔지니어분들 뿐만 아니라 많은 분들이 좋아해주셔서 프론트엔드 엔지니어로써 뿌듯함을 느꼈습니다. 그래서 다시한번 나는 프론트가 맞구나.. 라고 생각하게 되었습니다.
 
   ![스크린샷 2023-03-23 오후 5.25.31.png](/static/images/first-project-memoir-in-tumblbug/feeling.png)
