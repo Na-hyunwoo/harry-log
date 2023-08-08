@@ -5,7 +5,7 @@ occupation: Frontend developer
 # company: Stanford University
 email: contactharry97@gmail.com
 # twitter: https://twitter.com/Twitter
-linkedin: https://www.linkedin.com/in/%ED%98%84%EC%9A%B0-%EB%82%98-940552231/
+linkedin: https://www.linkedin.com/in/na-hyunwoo/
 github: https://github.com/Na-hyunwoo
 ---
 

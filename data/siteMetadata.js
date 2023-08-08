@@ -12,7 +12,7 @@ const siteMetadata = {
   socialBanner: '/static/images/twitter-card.png',
   email: 'contactharry97@gmail.com',
   github: 'https://github.com/Na-hyunwoo',
-  linkedin: 'https://www.linkedin.com/in/%ED%98%84%EC%9A%B0-%EB%82%98-940552231/',
+  linkedin: 'https://www.linkedin.com/in/na-hyunwoo/',
   locale: 'en-US',
   analytics: {
     // If you want to use an analytics provider you have to add it to the
