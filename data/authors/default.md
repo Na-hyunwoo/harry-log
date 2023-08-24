@@ -1,7 +1,7 @@
 ---
 name: Na Hyunwoo
 avatar: /static/images/avatar.png
-occupation: Frontend Engineer
+occupation: Software Engineer
 company: Backpackr
 email: contactharry97@gmail.com
 # twitter: https://twitter.com/Twitter
